@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SimuREP — maquette pédagogique</title>
+  <style>
+    :root {
+      --ink: #1d2730;
+      --muted: #65727d;
+      --line: #d7dde2;
+      --paper: #ffffff;
+      --page: #eef1f3;
+      --accent: #c84f2e;
+      --accent-soft: #f6e4de;
+      --primary: #e7522d;
+      --secondary: #2f76bc;
+      --water: #0f9d8c;
+      --ok: #18875c;
+      --warn: #b36b00;
+      --danger: #b32828;
+      --shadow: 0 10px 30px rgba(30, 42, 52, .11);
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: light; }
+    body {
+      margin: 0;
+      min-width: 1080px;
+      color: var(--ink);
+      background: var(--page);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .appbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      min-height: 66px;
+      padding: 0 24px;
+      color: #fff;
+      background: #18242d;
+      border-bottom: 1px solid #34424d;
+      box-shadow: 0 4px 14px rgba(0,0,0,.15);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      font-size: 21px;
+      background: #4a2b25;
+      color: #ff7b55;
+    }
+    .brand strong { display: block; font-size: 17px; }
+    .brand span { display: block; margin-top: 2px; color: #afbac2; font-size: 12px; }
+
+    .tabs { display: flex; align-self: stretch; gap: 4px; }
+    .tab {
+      min-width: 128px;
+      padding: 0 18px;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      color: #b8c3ca;
+      background: transparent;
+      font-weight: 650;
+    }
+    .tab:hover { color: #fff; background: rgba(255,255,255,.04); }
+    .tab.active { color: #fff; border-bottom-color: #ff7652; }
+
+    .runbar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .clock {
+      min-width: 82px;
+      padding: 8px 10px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid #45535d;
+      border-radius: 7px;
+      background: #101a21;
+    }
+    .speed-select {
+      padding: 8px 28px 8px 10px;
+      color: #fff;
+      border: 1px solid #45535d;
+      border-radius: 7px;
+      background: #101a21;
+    }
+    .btn {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid #cfd6db;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font-weight: 700;
+    }
+    .btn:hover { background: #f5f7f8; }
+    .btn.primary { color: #fff; border-color: #d85d3b; background: #d85d3b; }
+    .btn.primary:hover { background: #c94f2f; }
+    .btn.dark { color: #fff; border-color: #586670; background: #2d3a43; }
+
+    main { padding: 18px 22px 32px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 1976px;
+      margin: 0 auto 12px;
+      padding: 10px 14px;
+      border: 1px solid #e3c983;
+      border-radius: 10px;
+      background: #fff8df;
+      color: #604c17;
+      font-size: 13px;
+    }
+    .notice strong { white-space: nowrap; }
+
+    .process-layout {
+      display: grid;
+      grid-template-columns: minmax(720px, 3fr) minmax(340px, 1fr);
+      align-items: start;
+      gap: 16px;
+      max-width: 1976px;
+      margin: 0 auto;
+    }
+    .diagram-shell,
+    .instrument-board {
+      overflow: hidden;
+      border: 1px solid #cfd5da;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .surface-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 46px;
+      padding: 0 15px;
+      border-bottom: 1px solid #e0e4e7;
+    }
+    .surface-title h2 { margin: 0; font-size: 16px; }
+    .surface-title span { color: var(--muted); font-size: 12px; }
+    .diagram-crop {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1200 / 800;
+      overflow: hidden;
+      background: #edf2f4;
+    }
+    .process-svg { display: block; width: 100%; height: 100%; }
+    .process-svg text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+    .zone { fill: #f8fafb; stroke: #cfd8dd; stroke-width: 1.5; }
+    .zone.secondary-zone { fill: #f5f9fc; }
+    .zone-title { fill: #63717b; font-size: 17px; font-weight: 800; letter-spacing: 1.4px; }
+    .equipment-body { fill: #e8eef1; stroke: #526570; stroke-width: 4; }
+    .equipment-inner { fill: #f9fbfc; stroke: #94a4ad; stroke-width: 2; }
+    .equipment-label { fill: #26343d; font-size: 19px; font-weight: 800; text-anchor: middle; }
+    .equipment-note { fill: #65757f; font-size: 12px; font-weight: 650; text-anchor: middle; }
+    .branch-label { fill: #8e3b25; font-size: 13px; font-weight: 850; }
+    .pipe-primary, .pipe-steam, .pipe-feed, .pipe-cooling {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 17;
+    }
+    .pipe-primary { stroke: #e8643f; }
+    .pipe-steam { stroke: #5aaad2; }
+    .pipe-feed { stroke: #35a995; }
+    .pipe-cooling { stroke: #4988c6; }
+    .pipe-outline { fill: none; stroke: #41545f; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; opacity: .12; }
+    .flow-arrow { fill: #fff; opacity: .9; }
+    .core-fill { fill: #ef6b48; }
+    .secondary-fill { fill: #63b9d9; opacity: .22; }
+    .press-liquid { fill: #e96642; opacity: .82; transition: y .25s linear, height .25s linear; }
+    .spray-jet { fill: none; stroke: #4799ca; stroke-width: 4; stroke-linecap: round; }
+    .heater-coil { fill: none; stroke: #dc532f; stroke-width: 5; stroke-linecap: round; }
+    .u-tube { fill: none; stroke: #e8643f; stroke-width: 5; stroke-linecap: round; }
+    .water-wave { fill: none; stroke: #4d96cd; stroke-width: 5; stroke-linecap: round; }
+    .pump-ring { fill: #e8eef1; stroke: #526570; stroke-width: 5; }
+    .pump-blade { fill: none; stroke: #526570; stroke-width: 4; stroke-linecap: round; }
+    .network-line { stroke: #536670; stroke-width: 4; }
+    .sensor-box { fill: #fff; stroke: #b8c4ca; stroke-width: 1.5; }
+    .sensor-tag { fill: #66757f; font-size: 10px; font-weight: 850; letter-spacing: .7px; }
+    .sensor-value { fill: #17242c; font-size: 15px; font-weight: 850; font-variant-numeric: tabular-nums; }
+    .actuator-box { fill: #f5f0f7; stroke: #aa96b2; stroke-width: 1.5; }
+    .actuator-tag { fill: #72547e; font-size: 10px; font-weight: 850; letter-spacing: .6px; }
+    .actuator-value { fill: #2c2131; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .var-name { font-weight: 900; font-style: normal; }
+    .var-meaning { font-weight: 550; font-style: italic; letter-spacing: 0; }
+    .fixed-box { fill: #eef3f5; stroke: #9eabb2; stroke-width: 1.5; }
+    .leader { fill: none; stroke: #98a6ad; stroke-width: 1.5; }
+    .gv-head { fill: #d7e0e4; stroke: #526570; stroke-width: 4; }
+    .gv-divider { stroke: #526570; stroke-width: 4; }
+    .valve-body { fill: #fff; stroke: #697984; stroke-width: 3; }
+    .valve-active .valve-body { fill: #ffd8cb; stroke: #c44325; }
+    .relief-line { fill: none; stroke: #758690; stroke-width: 7; stroke-linecap: round; }
+    .relief-line.active { stroke: #cf4e2c; }
+
+    .alarm-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 1976px;
+      min-height: 42px;
+      margin: 0 auto 12px;
+      padding: 8px 14px;
+      border: 1px solid #b8d8c9;
+      border-radius: 10px;
+      color: #155c40;
+      background: #edf8f2;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .alarm-lamp { width: 13px; height: 13px; flex: 0 0 auto; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px rgba(24,135,92,.12); }
+    .alarm-strip.alarm-warning { color: #684500; border-color: #e5bc4e; background: #fff5d4; }
+    .alarm-strip.alarm-warning .alarm-lamp { background: #e69a00; box-shadow: 0 0 0 4px rgba(230,154,0,.16); }
+    .alarm-strip.alarm-danger { color: #761f1f; border-color: #dc7777; background: #fde5e5; }
+    .alarm-strip.alarm-danger .alarm-lamp { background: var(--danger); box-shadow: 0 0 0 4px rgba(179,40,40,.16); }
+
+    .instrument.alarm-warning { border-left-color: #e69a00; background: #fff4cf; }
+    .instrument.alarm-danger { border-left-color: var(--danger); background: #fde0e0; }
+    .svg-sensor.alarm-warning .sensor-box { fill: #fff2c4; stroke: #d99100; stroke-width: 2.5; }
+    .svg-sensor.alarm-danger .sensor-box { fill: #ffd9d9; stroke: #b32828; stroke-width: 3; }
+    @keyframes alarm-blink-warning { 50% { opacity: .32; } }
+    @keyframes alarm-blink-danger { 50% { opacity: .08; } }
+    .instrument.alarm-warning output,
+    .svg-sensor.alarm-warning .sensor-value { animation: alarm-blink-warning 1.15s step-end infinite; }
+    .instrument.alarm-danger output,
+    .svg-sensor.alarm-danger .sensor-value { animation: alarm-blink-danger .62s step-end infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      .instrument.alarm-warning output, .svg-sensor.alarm-warning .sensor-value,
+      .instrument.alarm-danger output, .svg-sensor.alarm-danger .sensor-value { animation: none; }
+    }
+
+    .instrument-board { padding-bottom: 10px; }
+    .instrument-section { padding: 11px 14px 5px; }
+    .instrument-section + .instrument-section { border-top: 1px solid #e3e7ea; }
+    .instrument-section h3 {
+      margin: 0 0 7px;
+      color: #44515b;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .instrument-subhead {
+      margin: 8px 0 4px;
+      color: #7a858d;
+      font-size: 11px;
+      font-weight: 750;
+    }
+    .instrument-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+    .instrument {
+      min-width: 0;
+      padding: 7px 8px;
+      border-left: 3px solid #a9b3ba;
+      background: #f5f7f8;
+    }
+    .instrument.primary { border-left-color: var(--primary); }
+    .instrument.secondary { border-left-color: var(--secondary); }
+    .instrument.action { border-left-color: #8a5d9d; }
+    .instrument.info { border-left-color: var(--water); }
+    .instrument .tag {
+      display: block;
+      margin-bottom: 2px;
+      color: #69757e;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .instrument .tag strong { font-weight: 900; }
+    .instrument .tag em {
+      font-weight: 500;
+      font-style: italic;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .instrument .tag strong + em::before { content: " · "; }
+    .instrument output {
+      display: block;
+      overflow: hidden;
+      color: #18242d;
+      font-size: 14px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .plant-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 2%;
+      padding: 2.2%;
+      border-radius: 5px;
+      color: #fff;
+      background: var(--ok);
+      font-size: clamp(7px, .69vw, 13px);
+      font-weight: 850;
+      text-align: center;
+    }
+    .plant-state.warn { background: var(--warn); }
+    .plant-state.danger { background: var(--danger); }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(620px, 1.55fr) minmax(390px, .8fr);
+      gap: 16px;
+      max-width: 1976px;
+      margin: 16px auto 0;
+    }
+    .card {
+      border: 1px solid #d1d8dd;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 5px 17px rgba(33,45,54,.06);
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 47px;
+      padding: 0 15px;
+      border-bottom: 1px solid #e0e4e7;
+    }
+    .card-head h2 { margin: 0; font-size: 16px; }
+    .card-head span { color: var(--muted); font-size: 12px; }
+
+    .chart-stack { padding: 8px 12px 12px; }
+    .chart-wrap { height: 220px; }
+    .reactivity-wrap { height: 118px; margin-top: 4px; border-top: 1px solid #e1e5e8; }
+    .trace-label { margin: 7px 0 0 43px; color: #65727d; font-size: 11px; font-weight: 750; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 12px; color: #56636d; }
+    .legend i { display: inline-block; width: 16px; height: 3px; margin: 0 5px 3px 0; border-radius: 2px; }
+
+    .controls { padding: 13px 15px 16px; }
+    .control {
+      display: grid;
+      grid-template-columns: 180px minmax(130px,1fr) 84px;
+      align-items: center;
+      gap: 10px;
+      min-height: 50px;
+      border-bottom: 1px solid #eceff1;
+    }
+    .control:last-child { border-bottom: 0; }
+    .control label { font-size: 13px; font-weight: 750; }
+    .control label > strong { font-weight: 900; }
+    .control label > em { font-weight: 500; }
+    .control small { display: block; margin-top: 2px; color: #7a858d; font-weight: 400; }
+    .control output {
+      padding: 5px 7px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      border-radius: 5px;
+      background: #f1f3f5;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .switch-line { display: flex; align-items: center; gap: 9px; }
+    .switch {
+      position: relative;
+      width: 45px;
+      height: 25px;
+      flex: 0 0 auto;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch span { position: absolute; inset: 0; border-radius: 20px; background: #aeb7bd; transition: .15s; }
+    .switch span::after {
+      content: "";
+      position: absolute;
+      width: 19px;
+      height: 19px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+      transition: .15s;
+    }
+    .switch input:checked + span { background: var(--secondary); }
+    .switch input:checked + span::after { transform: translateX(20px); }
+
+    .model-shell { max-width: 1360px; margin: 0 auto; }
+    .model-title { margin: 4px 0 16px; }
+    .model-title h1 { margin: 0 0 5px; font-size: 27px; }
+    .model-title p { margin: 0; color: var(--muted); }
+    .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .model-card { padding: 18px 20px; }
+    .model-card.wide { grid-column: 1 / -1; }
+    .model-card h2 { margin: 0 0 12px; font-size: 18px; }
+    .equation {
+      margin: 9px 0;
+      padding: 10px 12px;
+      overflow-x: auto;
+      border-left: 4px solid #d45c3a;
+      background: #f6f7f8;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .model-card p, .model-card li { font-size: 13px; line-height: 1.55; }
+    .model-card ul { margin: 8px 0 0; padding-left: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #e1e5e8; }
+    th { color: #4d5961; background: #f4f6f7; font-size: 12px; letter-spacing: .03em; }
+    td:last-child { font-variant-numeric: tabular-nums; }
+    a { color: #1f65a7; }
+    .badge {
+      display: inline-block;
+      margin-right: 5px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      color: #fff;
+      background: #566570;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+
+    @media (max-width: 1280px) {
+      .process-layout { grid-template-columns: 1fr; }
+      .instrument-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .chart-wrap { height: 230px; }
+      .model-grid { grid-template-columns: 1fr; }
+      .model-card.wide { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand">
+      <div class="brand-mark">⚛</div>
+      <div><strong>SimuREP</strong><span>Maquette pédagogique simplifiée</span></div>
+    </div>
+    <nav class="tabs" aria-label="Vues">
+      <button class="tab active" data-view="synoptic">Synoptique</button>
+      <button class="tab" data-view="model">Modèle physique</button>
+    </nav>
+    <div class="runbar">
+      <span id="runStatus">Simulation en pause</span>
+      <span class="clock" id="simClock">00:00:00</span>
+      <select class="speed-select" id="speed" aria-label="Vitesse de simulation">
+        <option value="1">×1</option>
+        <option value="5">×5</option>
+        <option value="20">×20</option>
+      </select>
+      <button class="btn primary" id="runBtn">Démarrer</button>
+      <button class="btn dark" id="resetBtn">Réinitialiser</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="view-synoptic">
+      <div class="notice">
+        <strong>Maquette de formation</strong>
+        <span>Modèle volontairement global et non qualifié pour l’ingénierie, la sûreté ou la conduite d’une installation réelle.</span>
+      </div>
+
+      <div class="alarm-strip" id="alarmStrip" role="status" aria-live="polite">
+        <span class="alarm-lamp" aria-hidden="true"></span>
+        <span id="alarmSummary">Aucune alarme — paramètres dans le domaine normal</span>
+      </div>
+
+      <div class="process-layout">
+        <section class="diagram-shell" aria-label="Synoptique animé du REP">
+          <div class="surface-title">
+            <h2>Synoptique REP</h2>
+            <span>Schéma animé — capteurs et actionneurs en temps réel</span>
+          </div>
+          <div class="diagram-crop">
+            <svg class="process-svg" viewBox="0 0 1200 800" role="img" aria-labelledby="synTitle synDesc">
+              <title id="synTitle">Synoptique animé d’un réacteur à eau pressurisée simplifié</title>
+              <desc id="synDesc">Le primaire relie la cuve au bas du générateur de vapeur. La branche chaude entre à gauche de la boîte à eau, traverse un tube en U, puis ressort à droite vers la pompe. Le secondaire alimente latéralement le générateur de vapeur et évacue la vapeur par le haut.</desc>
+              <defs>
+                <filter id="equipmentShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#33444e" flood-opacity=".18"/></filter>
+                <clipPath id="pressurizerClip"><rect x="329" y="241" width="112" height="188" rx="54"/></clipPath>
+              </defs>
+
+              <rect class="zone" x="10" y="10" width="750" height="780" rx="16"/>
+              <rect class="zone secondary-zone" x="770" y="10" width="420" height="780" rx="16"/>
+              <text class="zone-title" x="27" y="35">CIRCUIT PRIMAIRE</text>
+              <text class="zone-title" x="787" y="35">CIRCUIT SECONDAIRE</text>
+
+              <!-- Bandeaux de mesure primaire, hors des équipements -->
+              <g class="svg-sensor" data-signal="pow1" transform="translate(25 48)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">POW1</tspan><tspan class="var-meaning"> · puissance nucléaire</tspan></text><text class="sensor-value" id="svPow1" x="9" y="40">100,0 % PN</text></g>
+              <g class="svg-sensor" data-signal="pthc" transform="translate(163 48)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">PTHC</tspan><tspan class="var-meaning"> · thermique cœur</tspan></text><text class="sensor-value" id="svPthc" x="9" y="40">2 785 MWth</text></g>
+              <g class="svg-sensor" data-signal="mp1" transform="translate(301 48)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MP1</tspan><tspan class="var-meaning"> · pression primaire</tspan></text><text class="sensor-value" id="svMP1" x="9" y="40">155,0 bar</text></g>
+              <g class="svg-sensor" data-signal="mn1" transform="translate(439 48)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MN1</tspan><tspan class="var-meaning"> · niveau pressu</tspan></text><text class="sensor-value" id="svMN1" x="9" y="40">50,0 %</text></g>
+              <g class="svg-sensor" data-signal="tpzr" transform="translate(577 48)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">TPZR</tspan><tspan class="var-meaning"> · température</tspan></text><text class="sensor-value" id="svTpzr" x="9" y="40">344,8 °C</text></g>
+              <g class="svg-sensor" data-signal="mt1" transform="translate(25 108)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MT1</tspan><tspan class="var-meaning"> · branche chaude</tspan></text><text class="sensor-value" id="svMT1" x="9" y="40">322,9 °C</text></g>
+              <g class="svg-sensor" data-signal="mt2" transform="translate(163 108)"><rect class="sensor-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MT2</tspan><tspan class="var-meaning"> · branche froide</tspan></text><text class="sensor-value" id="svMT2" x="9" y="40">289,1 °C</text></g>
+              <g transform="translate(301 108)"><rect class="fixed-box" width="132" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">QPRI</tspan><tspan class="var-meaning"> · débit primaire</tspan></text><text class="sensor-value" x="9" y="40">15 000 kg/s</text></g>
+              <g class="svg-sensor" data-signal="relief" transform="translate(439 108)"><rect class="sensor-box" width="184" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">QSVP</tspan><tspan class="var-meaning"> · débit soupapes</tspan></text><text class="sensor-value" id="svRelief" x="9" y="40">Fermées · 0,0 kg/s</text></g>
+
+              <!-- Capteurs secondaires, dégagés de la chaîne vapeur -->
+              <g class="svg-sensor" data-signal="mt3" transform="translate(787 48)"><rect class="sensor-box" width="124" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MT3</tspan><tspan class="var-meaning"> · vapeur</tspan></text><text class="sensor-value" id="svMT3" x="9" y="40">285,0 °C</text></g>
+              <g class="svg-sensor" data-signal="mp2" transform="translate(919 48)"><rect class="sensor-box" width="124" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MP2</tspan><tspan class="var-meaning"> · pression GV</tspan></text><text class="sensor-value" id="svMP2" x="9" y="40">69,2 bar</text></g>
+              <g class="svg-sensor" data-signal="md1" transform="translate(1051 48)"><rect class="sensor-box" width="124" height="53" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MD1</tspan><tspan class="var-meaning"> · débit vapeur</tspan></text><text class="sensor-value" id="svMD1" x="9" y="40">1,64 t/s</text></g>
+
+              <!-- Cuve -->
+              <g filter="url(#equipmentShadow)">
+                <rect class="equipment-body" x="74" y="305" width="154" height="285" rx="73"/>
+                <rect class="equipment-inner" x="87" y="324" width="128" height="248" rx="59"/>
+                <rect class="core-fill" x="111" y="421" width="78" height="103" rx="8" opacity=".18"/>
+                <path d="M121 346 V417 M142 346 V417 M163 346 V417 M184 346 V417" stroke="#647985" stroke-width="5" stroke-linecap="round"/>
+                <path d="M117 439 V507 M136 439 V507 M155 439 V507 M174 439 V507 M193 439 V507" stroke="#e8643f" stroke-width="9" stroke-linecap="round"/>
+              </g>
+              <text class="equipment-label" x="151" y="291">Cuve</text>
+              <text class="equipment-note" x="151" y="610">cœur et grappes</text>
+
+              <!-- Pressuriseur -->
+              <g filter="url(#equipmentShadow)">
+                <rect class="equipment-body" x="319" y="230" width="132" height="210" rx="64"/>
+                <rect class="equipment-inner" x="329" y="241" width="112" height="188" rx="54"/>
+                <rect id="pressLiquid" class="press-liquid" x="329" y="335" width="112" height="94" clip-path="url(#pressurizerClip)"/>
+                <path id="pressLevelLine" d="M331 335 H439" stroke="#b33f24" stroke-width="3"/>
+                <path class="spray-jet" d="M385 251 V272 M363 262 L376 278 M407 262 L394 278"/>
+                <path id="heaterCoil" class="heater-coil" d="M340 398 q10 -17 20 0 t20 0 t20 0 t20 0"/>
+              </g>
+              <text class="equipment-label" x="385" y="214">Pressuriseur</text>
+              <path id="reliefLine" class="relief-line" d="M421 243 H470 V198 H482"/>
+              <g id="reliefValveSymbol" transform="translate(452 188)"><polygon class="valve-body" points="0,0 15,10 0,20"/><polygon class="valve-body" points="30,0 15,10 30,20"/></g>
+
+              <!-- Générateur de vapeur : secondaire en haut, primaire en bas -->
+              <g filter="url(#equipmentShadow)">
+                <path class="equipment-body" d="M524 604 Q502 585 502 552 V286 Q502 246 536 225 Q560 210 592 210 Q624 210 648 225 Q682 246 682 286 V552 Q682 585 660 604 Z"/>
+                <path class="secondary-fill" d="M516 364 H668 V548 Q668 568 654 582 H530 Q516 568 516 548 Z"/>
+                <path class="water-wave" d="M526 342 q16 -15 32 0 t32 0 t32 0 t32 0"/>
+                <path class="water-wave" d="M526 310 q16 -15 32 0 t32 0 t32 0 t32 0"/>
+                <line x1="521" y1="358" x2="663" y2="358" stroke="#82949e" stroke-width="2"/>
+                <path class="u-tube" d="M548 584 V405 Q548 371 592 371 Q636 371 636 405 V584" stroke-width="8"/>
+                <path class="u-tube" d="M565 584 V425 Q565 394 592 394 Q619 394 619 425 V584" stroke-width="5"/>
+                <path class="gv-head" d="M500 571 H684 V617 Q684 633 668 633 H516 Q500 633 500 617 Z"/>
+                <line class="gv-divider" x1="592" y1="571" x2="592" y2="632"/>
+                <path class="u-tube" d="M548 584 V405 Q548 371 592 371 Q636 371 636 405 V584" stroke-width="8"/>
+                <circle cx="540" cy="601" r="9" fill="#e8643f"/><circle cx="644" cy="601" r="9" fill="#e8643f"/>
+              </g>
+              <text class="equipment-label" x="592" y="260">Générateur de vapeur</text>
+              <text class="equipment-note" x="592" y="288">séparateurs</text>
+              <text class="equipment-note" x="592" y="468">secondaire</text>
+              <text class="equipment-note" x="546" y="622">chaud</text>
+              <text class="equipment-note" x="638" y="622">froid</text>
+
+              <!-- Primaire : les deux piquages restent en partie basse du GV -->
+              <path class="pipe-outline" d="M228 462 H266 V590 H500"/>
+              <path class="pipe-primary" d="M228 462 H266 V590 H500"/>
+              <path class="pipe-primary" d="M372 590 V440" stroke-width="10"/>
+              <path class="pipe-outline" d="M684 590 H716 V666 H228 V540"/>
+              <path class="pipe-primary" d="M684 590 H716 V666 H228 V540"/>
+              <polygon class="flow-arrow" points="404,581 423,590 404,599"/>
+              <polygon class="flow-arrow" points="354,657 335,666 354,675"/>
+              <text class="branch-label" x="404" y="575">BC · branche chaude</text>
+              <text class="branch-label" x="688" y="574">BU</text>
+              <text class="branch-label" x="286" y="651">BF · branche froide</text>
+              <g transform="translate(716 642)" filter="url(#equipmentShadow)"><circle class="pump-ring" r="37"/><circle class="equipment-inner" r="23"/><path class="pump-blade" d="M0 -18 C16 -11 18 4 7 16 M7 16 C-8 22 -21 12 -20 -2 M-20 -2 C-18 -16 -6 -21 0 -18"/></g>
+              <text class="equipment-label" x="700" y="706">GMPP</text>
+
+              <!-- Secondaire du GV : alimentation latérale et vapeur en partie haute -->
+              <path class="pipe-steam" d="M592 210 V178 H822"/>
+              <polygon class="flow-arrow" points="752,169 771,178 752,187"/>
+              <path class="pipe-feed" d="M840 618 H752 V378 H682"/>
+              <polygon class="flow-arrow" points="718,369 699,378 718,387"/>
+
+              <!-- Turbine, alternateur et condenseur -->
+              <g filter="url(#equipmentShadow)">
+                <path class="equipment-body" d="M822 143 L949 163 V215 L822 235 Z"/>
+                <line x1="856" y1="153" x2="856" y2="225" stroke="#82949e" stroke-width="3"/><line x1="894" y1="159" x2="894" y2="219" stroke="#82949e" stroke-width="3"/><line x1="930" y1="165" x2="930" y2="213" stroke="#82949e" stroke-width="3"/>
+                <line class="network-line" x1="949" y1="189" x2="986" y2="189"/><rect class="equipment-body" x="986" y="162" width="82" height="54" rx="27"/><line class="network-line" x1="1068" y1="189" x2="1155" y2="189"/><line class="network-line" x1="1112" y1="164" x2="1112" y2="214"/><line class="network-line" x1="1132" y1="171" x2="1132" y2="207"/>
+              </g>
+              <text class="equipment-label" x="835" y="258">Turbine</text>
+              <text class="equipment-note" x="1027" y="231">alternateur</text>
+              <path class="pipe-steam" d="M885 235 V394"/>
+
+              <g filter="url(#equipmentShadow)">
+                <rect class="equipment-body" x="812" y="394" width="336" height="157" rx="42"/>
+                <path class="water-wave" d="M842 430 q18 -15 36 0 t36 0 t36 0 t36 0 t36 0 t36 0 t36 0"/>
+                <line x1="840" y1="481" x2="1120" y2="481" stroke="#4d96cd" stroke-width="7" stroke-linecap="round"/>
+                <line x1="840" y1="510" x2="1120" y2="510" stroke="#4d96cd" stroke-width="7" stroke-linecap="round"/>
+                <g stroke="#4d96cd" stroke-width="3"><line x1="866" y1="463" x2="866" y2="528"/><line x1="910" y1="463" x2="910" y2="528"/><line x1="954" y1="463" x2="954" y2="528"/><line x1="998" y1="463" x2="998" y2="528"/><line x1="1042" y1="463" x2="1042" y2="528"/><line x1="1086" y1="463" x2="1086" y2="528"/></g>
+              </g>
+              <text class="equipment-label" x="980" y="380">Condenseur</text>
+
+              <!-- Source froide : uniquement une entrée et une sortie -->
+              <path class="pipe-cooling" d="M1148 481 H1180"/>
+              <path class="pipe-cooling" d="M1180 510 H1148"/>
+              <polygon class="flow-arrow" points="1159,472 1178,481 1159,490"/>
+              <polygon class="flow-arrow" points="1168,501 1149,510 1168,519"/>
+              <text class="equipment-note" x="1148" y="462">source froide</text>
+
+              <!-- Condensats et alimentation -->
+              <path class="pipe-feed" d="M980 551 V618 H840"/>
+              <g transform="translate(840 618)" filter="url(#equipmentShadow)"><circle class="pump-ring" r="32"/><circle class="equipment-inner" r="20"/><path class="pump-blade" d="M0 -15 C13 -9 15 3 5 13 M5 13 C-7 18 -17 9 -16 -2 M-16 -2 C-14 -13 -4 -17 0 -15"/></g>
+              <text class="equipment-note" x="840" y="663">pompe alimentaire</text>
+
+              <!-- Actionneurs et constantes, dans un bandeau séparé -->
+              <g class="svg-actuator" transform="translate(25 728)"><rect class="actuator-box" width="126" height="48" rx="7"/><text class="actuator-tag" x="9" y="17"><tspan class="var-name">POSG</tspan><tspan class="var-meaning"> · insertion grappes</tspan></text><text class="actuator-value" id="svRods" x="9" y="38">50 %</text></g>
+              <g class="svg-actuator" transform="translate(157 728)"><rect class="actuator-box" width="126" height="48" rx="7"/><text class="actuator-tag" x="9" y="17"><tspan class="var-name">QASP</tspan><tspan class="var-meaning"> · débit aspersion</tspan></text><text class="actuator-value" id="svSpray" x="9" y="38">102 m³/h</text></g>
+              <g class="svg-actuator" transform="translate(289 728)"><rect class="actuator-box" width="145" height="48" rx="7"/><text class="actuator-tag" x="9" y="17"><tspan class="var-name">PCHF</tspan><tspan class="var-meaning"> · chaufferettes</tspan></text><text class="actuator-value" id="svHeater" x="9" y="38">1 921,5 kW</text></g>
+              <g class="svg-actuator" transform="translate(440 728)"><rect class="actuator-box" width="126" height="48" rx="7"/><text class="actuator-tag" x="9" y="17"><tspan class="var-name">QDEC</tspan><tspan class="var-meaning"> · décharge RCV</tspan></text><text class="actuator-value" id="svLetdown" x="9" y="38">15 m³/h</text></g>
+              <g transform="translate(572 728)"><rect class="fixed-box" width="145" height="48" rx="7"/><text class="actuator-tag" x="9" y="17"><tspan class="var-name">QCHA</tspan><tspan class="var-meaning"> · charge constante</tspan></text><text class="actuator-value" id="svCharge" x="9" y="38">15 m³/h</text></g>
+
+              <!-- Mesures et puissance secondaire, également hors des équipements -->
+              <g class="svg-sensor" data-signal="mt4" transform="translate(787 728)"><rect class="sensor-box" width="115" height="48" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">MT4</tspan><tspan class="var-meaning"> · eau alim.</tspan></text><text class="sensor-value" id="svMT4" x="9" y="38">245,0 °C</text></g>
+              <g class="svg-sensor" data-signal="turbine" transform="translate(909 728)"><rect class="sensor-box" width="163" height="48" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">PTUR</tspan><tspan class="var-meaning"> · puissance turbine</tspan></text><text class="sensor-value" id="svTurbine" x="9" y="38">100,0 % · 2 785 MWth</text></g>
+              <g class="svg-sensor" data-signal="pow2" transform="translate(1079 728)"><rect class="sensor-box" width="96" height="48" rx="7"/><text class="sensor-tag" x="9" y="17"><tspan class="var-name">POW2</tspan><tspan class="var-meaning"> · réseau</tspan></text><text class="sensor-value" id="svPow2" x="9" y="38">900 MWe</text></g>
+            </svg>
+          </div>
+        </section>
+
+        <aside class="instrument-board" aria-label="Tableau de bord des valeurs dynamiques" aria-live="polite">
+          <div class="surface-title"><h2>Tableau de bord</h2><span>Temps réel</span></div>
+
+          <section class="instrument-section">
+            <h3>Capteurs</h3>
+            <div class="instrument-subhead">Circuit primaire</div>
+            <div class="instrument-grid">
+              <div class="instrument primary" data-signal="pow1"><span class="tag"><strong>POW1</strong><em>Puissance nucléaire RPN</em></span><output id="pow1">100,0 % PN</output></div>
+              <div class="instrument primary" data-signal="mt1"><span class="tag"><strong>MT1</strong><em>Température branche chaude</em></span><output id="mt1">322,9 °C</output></div>
+              <div class="instrument primary" data-signal="mt2"><span class="tag"><strong>MT2</strong><em>Température branche froide</em></span><output id="mt2">289,1 °C</output></div>
+              <div class="instrument primary" data-signal="mp1"><span class="tag"><strong>MP1</strong><em>Pression primaire</em></span><output id="mp1">155,0 bar</output></div>
+              <div class="instrument primary" data-signal="mn1"><span class="tag"><strong>MN1</strong><em>Niveau pressuriseur</em></span><output id="mn1">50,0 %</output></div>
+            </div>
+            <div class="instrument-subhead">Circuit secondaire</div>
+            <div class="instrument-grid">
+              <div class="instrument secondary" data-signal="pow2"><span class="tag"><strong>POW2</strong><em>Puissance électrique réseau</em></span><output id="pow2">900 MWe</output></div>
+              <div class="instrument secondary" data-signal="mt3"><span class="tag"><strong>MT3</strong><em>Température vapeur</em></span><output id="mt3">285,0 °C</output></div>
+              <div class="instrument secondary"><span class="tag"><strong>MT4</strong><em>Température eau alimentaire</em></span><output id="mt4">245,0 °C</output></div>
+              <div class="instrument secondary" data-signal="md1"><span class="tag"><strong>MD1</strong><em>Débit vapeur</em></span><output id="md1">1,64 t/s</output></div>
+              <div class="instrument secondary" data-signal="mp2"><span class="tag"><strong>MP2</strong><em>Pression secondaire GV</em></span><output id="mp2">69,2 bar</output></div>
+            </div>
+          </section>
+
+          <section class="instrument-section">
+            <h3>Informations calculées</h3>
+            <div class="instrument-grid">
+              <div class="instrument info" data-signal="reactivity"><span class="tag"><strong>REAC</strong><em>Réactivité</em></span><output id="reactivity">0,0 pcm</output></div>
+              <div class="instrument info" data-signal="turbine"><span class="tag"><strong>PTUR</strong><em>Puissance turbine</em></span><output id="turbinePct">100,0 % · 2 785 MWth</output></div>
+              <div class="instrument info" data-signal="tavg"><span class="tag"><strong>TMOY</strong><em>Température moyenne primaire</em></span><output id="tavg">306,0 °C</output></div>
+              <div class="instrument info" data-signal="tpzr"><span class="tag"><strong>TPZR</strong><em>Température pressuriseur</em></span><output id="tpzrInfo">344,8 °C</output></div>
+              <div class="instrument info" data-signal="tfuel"><span class="tag"><strong>TCRA</strong><em>Température crayons</em></span><output id="tfuel">800 °C</output></div>
+              <div class="instrument info"><span class="tag"><strong>PLIN</strong><em>Puissance linéique</em></span><output id="plin">210 W/cm</output></div>
+              <div class="instrument info" data-signal="dnbr"><span class="tag"><strong>DNBR</strong><em>Rapport critique simplifié</em></span><output id="dnbr">1,65</output></div>
+              <div class="instrument info" data-signal="pgv"><span class="tag"><strong>PGV1</strong><em>Puissance échangée GV</em></span><output id="pgv">2 785 MWth</output></div>
+              <div class="instrument info" data-signal="pthc"><span class="tag"><strong>PTHC</strong><em>Puissance thermique cœur</em></span><output id="pthc">2 785 MWth</output></div>
+              <div class="instrument info"><span class="tag"><strong>QPRI</strong><em>Débit primaire</em></span><output>15 000 kg/s</output></div>
+              <div class="instrument info"><span class="tag"><strong>QCHA</strong><em>Charge RCV constante</em></span><output>15 m³/h</output></div>
+              <div class="instrument info" data-signal="heaterImmersion"><span class="tag"><strong>IMCH</strong><em>Immersion chaufferettes</em></span><output id="heaterImmersion">100,0 %</output></div>
+              <div class="instrument info" data-signal="relief"><span class="tag"><strong>QSVP</strong><em>Débit soupapes pressuriseur</em></span><output id="reliefStatus">Fermées · 0,0 kg/s</output></div>
+            </div>
+            <div class="plant-state" id="plantState">État installation : NORMAL</div>
+          </section>
+
+          <section class="instrument-section">
+            <h3>Actionneurs</h3>
+            <div class="instrument-grid">
+              <div class="instrument action"><span class="tag"><strong>POSG</strong><em>Position des grappes</em></span><output id="aRods">50 %</output></div>
+              <div class="instrument action"><span class="tag"><strong>QASP</strong><em>Débit d’aspersion</em></span><output id="aSpray">102 m³/h</output></div>
+              <div class="instrument action"><span class="tag"><strong>PCHF</strong><em>Puissance chaufferettes</em></span><output id="aHeater">1 921,5 kW</output></div>
+              <div class="instrument action"><span class="tag"><strong>QDEC</strong><em>Débit de décharge RCV</em></span><output id="aLetdown">15 m³/h</output></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <div class="workspace">
+        <section class="card">
+          <div class="card-head">
+            <h2>Historique — 5 dernières minutes</h2>
+            <div class="legend">
+              <span><i style="background:#d7502e"></i>Puissance nucléaire (% PN)</span>
+              <span><i style="background:#138d7f"></i>Puissance échangée GV (% PN)</span>
+              <span><i style="background:#2f76bc"></i>Puissance turbine (%)</span>
+            </div>
+          </div>
+          <div class="chart-stack">
+            <div class="chart-wrap"><canvas id="historyChart" role="img" aria-label="Historique des puissances nucléaire, GV et turbine"></canvas></div>
+            <div class="trace-label">Réactivité (pcm)</div>
+            <div class="reactivity-wrap"><canvas id="reactivityChart" role="img" aria-label="Historique de la réactivité en pcm"></canvas></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Conduite manuelle</h2><span>Les consignes agissent immédiatement</span></div>
+          <div class="controls">
+            <div class="control">
+              <label for="rods"><strong>POSG</strong> <em>Position des grappes</em><small>Insertion : + = baisse de réactivité</small></label>
+              <input id="rods" type="range" min="0" max="100" step="1" value="50">
+              <output id="rodsOut">50 %</output>
+            </div>
+            <div class="control">
+              <label><strong>QASP</strong> <em>Débit d’aspersion</em><small>Débit fixe quand ouverte</small></label>
+              <div class="switch-line"><label class="switch"><input id="spray" type="checkbox" checked><span></span></label><strong id="sprayText">Ouverte</strong></div>
+              <output>102 m³/h</output>
+            </div>
+            <div class="control">
+              <label for="heater"><strong>PCHF</strong> <em>Puissance chaufferettes</em><small>Équilibre l’aspersion au point nominal</small></label>
+              <input id="heater" type="range" min="0" max="2500" step="0.1" value="1921.5">
+              <output id="heaterOut">1 921,5 kW</output>
+            </div>
+            <div class="control">
+              <label for="letdown"><strong>QDEC</strong> <em>Débit de décharge RCV</em><small>QCHA reste fixée à 15 m³/h</small></label>
+              <input id="letdown" type="range" min="0" max="30" step="1" value="15">
+              <output id="letdownOut">15 m³/h</output>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-model">
+      <div class="model-shell">
+        <div class="model-title">
+          <h1>Modèle physique retenu</h1>
+          <p>Un modèle global, lisible par les étudiants, avec les hypothèses visibles et modifiables dans le code.</p>
+        </div>
+        <div class="model-grid">
+          <article class="card model-card">
+            <h2>1. Cinétique du cœur</h2>
+            <div class="equation">REAC [pcm] = −50 × (TMOY − 306) + 15 × (50 − POSG)</div>
+            <div class="equation">dn/dt = [(ρ − β) / T] × n + λC &nbsp; ; &nbsp; dC/dt = (β / T) × n − λC</div>
+            <div class="equation">PNUC = PN × n &nbsp; ; &nbsp; POW1 [% PN] = 100 × PNUC / PN</div>
+            <p><strong>POW1</strong> est le signal de puissance nucléaire fourni par une chambre RPN : il suit la population neutronique. Ce n’est pas la puissance thermique transmise au primaire. Cette dernière est <strong>PTHC</strong> et résulte de l’échange thermique combustible–fluide. Un seul groupe effectif de neutrons retardés est utilisé ; le signal <strong>50 − POSG</strong> garantit que l’insertion ajoute une réactivité négative.</p>
+          </article>
+
+          <article class="card model-card">
+            <h2>2. Thermique cœur et primaire</h2>
+            <div class="equation">PTHC = KCOE × (TCRA − TMOY)</div>
+            <div class="equation">CCRA × dTCRA/dt = PNUC − PTHC</div>
+            <div class="equation">CPRI × dTMOY/dt = PTHC − PGV1</div>
+            <p>Le cœur est représenté par 150 t de combustible à capacité calorifique constante. Le fluide primaire et les trois boucles réelles sont regroupés dans un seul circuit équivalent alimentant un seul GV équivalent.</p>
+          </article>
+
+          <article class="card model-card">
+            <h2>3. Générateurs de vapeur</h2>
+            <div class="equation">PGV1 = KGV1 × (TMOY − MT3)</div>
+            <div class="equation">PTUR = 100 % PN = 2 785 MWth</div>
+            <div class="equation">POW2 = η × PTUR = 900 MWe &nbsp; ; &nbsp; η = 32,3 %</div>
+            <div class="equation">CSEC × dMT3/dt = PGV1 − PTUR</div>
+            <div class="equation">MD1 = PTUR / Δh(eau MT4 → vapeur MT3)</div>
+            <p>Le réseau et la turbine restent à 100 %. Si le cœur ne fournit plus la puissance appelée, le secondaire se refroidit, la pression GV diminue et l’écart thermique au GV augmente. Il n’existe donc plus de régime permanent où le cœur, le GV et la turbine auraient des puissances différentes.</p>
+          </article>
+
+          <article class="card model-card">
+            <h2>4. Pressuriseur</h2>
+            <div class="equation">MP1 = Psat(TPZR) — pressuriseur toujours diphasique</div>
+            <div class="equation">IMCH = clamp[(MN1 − 10) / (25 − 10) ; 0 ; 1]</div>
+            <div class="equation">CPZR × dTPZR/dt = IMCH·PCHF − pertes − refroidissement QASP − QSVP·Δh</div>
+            <div class="equation">MCPP' = ρréf × (QCHA − QDEC) − QSVP &nbsp; ; &nbsp; ρCPP(T) = ρréf / [1 + αv(TMOY − 306)]</div>
+            <div class="equation">MN1 = 100 × [MCPP / ρCPP(T) − VCPP] / VPRESSU</div>
+            <p>Le niveau dépend de l’inventaire massique et de la dilatation du CPP. Sous 25 %, les cannes chauffantes se dénoient progressivement ; à 10 %, leur puissance utile devient nulle. Au-dessus de 75 %, la faible poche vapeur rend la pression plus sensible, et au-dessus de 90 % une ouverture de soupape peut entraîner un rejet liquide. La soupape de décharge module entre 160 et 164 bar (15 kg/s maximum) ; les soupapes de sûreté prennent le relais entre 166 et 170 bar (50 kg/s maximum). Leur débit retire masse et énergie au CPP. À l’initialisation, 1 921,5 kW compensent les pertes et l’aspersion de 102 m³/h.</p>
+          </article>
+
+          <article class="card model-card wide">
+            <h2>5. Mini-corrélation DNBR</h2>
+            <div class="equation">DNBR = q″crit / q″réel &nbsp; ; &nbsp; q″réel / q″réel,nom = PLIN / PLINnom</div>
+            <div class="equation">ΔTsub = Tsat(MP1) − MT1</div>
+            <div class="equation">Fp = √{[Pr(1−Pr)] / [Pr,nom(1−Pr,nom)]} &nbsp; avec &nbsp; Pr = MP1 / 220,64 bar</div>
+            <div class="equation">Fsub = max[0,15 ; 1 + 0,015 × (ΔTsub − ΔTsub,nom)]</div>
+            <div class="equation">DNBR = 1,65 × Fp × Fsub × (PLINnom / PLIN)</div>
+            <p>Le flux réel est proportionnel à la puissance linéique. Le flux critique diminue lorsque l’eau se rapproche de la saturation et lorsque la pression se rapproche du point critique. Le débit primaire étant fixé, son influence reste incluse dans le calage nominal. Il s’agit d’une corrélation pédagogique normalisée au point 155 bar / 322,9 °C, et non d’une corrélation combustible industrielle telle que WRB-2M ou W-3. La définition du DNBR et les dépendances à la pression, au sous-refroidissement et à l’écoulement sont cohérentes avec le <a href="https://www.energy.gov/documents/doe-hdbk-1012-92vol2">DOE Fundamentals Handbook</a> et la description réglementaire des corrélations CHF dans le <a href="https://www.nrc.gov/reading-rm/doc-collections/nuregs/staff/sr1793/initial/chapter4.pdf">NUREG-1793</a>.</p>
+          </article>
+
+          <article class="card model-card wide">
+            <h2>6. Seuils d’alarme pédagogiques</h2>
+            <p>Une sortie du domaine normal déclenche une alarme orange et fait clignoter la valeur concernée. Le franchissement du second seuil déclenche une alarme rouge plus rapide.</p>
+            <table>
+              <thead><tr><th>Signal</th><th>Domaine normal</th><th>Alarme rouge</th></tr></thead>
+              <tbody>
+                <tr><td>POW1 / PTHC / PGV1</td><td>90 à 110 % PN</td><td>&lt; 75 % ou &gt; 125 % PN</td></tr>
+                <tr><td>MP1</td><td>150 à 160 bar</td><td>&lt; 145 ou &gt; 166 bar</td></tr>
+                <tr><td>MN1</td><td>25 à 75 %</td><td>&lt; 10 ou &gt; 90 %</td></tr>
+                <tr><td>Température pressuriseur</td><td>342 à 348 °C</td><td>&lt; 336 ou &gt; 355 °C</td></tr>
+                <tr><td>MT1 / MT2</td><td>315–330 / 280–298 °C</td><td>hors 300–345 / 270–310 °C</td></tr>
+                <tr><td>TMOY</td><td>300 à 312 °C</td><td>&lt; 294 ou &gt; 320 °C</td></tr>
+                <tr><td>MP2 / MT3</td><td>65–75 bar / 280–290 °C</td><td>hors 60–80 bar / 275–295 °C</td></tr>
+                <tr><td>DNBR</td><td>&gt; 1,45</td><td>≤ 1,30</td></tr>
+                <tr><td>Réactivité absolue</td><td>&lt; 100 pcm</td><td>≥ 300 pcm</td></tr>
+                <tr><td>Température crayons</td><td>&lt; 1 200 °C</td><td>≥ 1 700 °C</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card model-card wide">
+            <h2>Paramètres, volumes et provenance</h2>
+            <table>
+              <thead><tr><th>Paramètre</th><th>Valeur utilisée</th><th>Statut / source</th></tr></thead>
+              <tbody>
+                <tr><td><strong>QPRI</strong> — débit primaire</td><td>15 000 kg/s</td><td><span class="badge">FIXÉ</span>Consigne</td></tr>
+                <tr><td><strong>QCHA</strong> — charge RCV</td><td>15 m³/h</td><td><span class="badge">ARRONDI</span>Ordre de grandeur documenté : 70–75 US gpm, soit 15,9–17,0 m³/h (<a href="https://www.govinfo.gov/content/pkg/GOVPUB-Y3_N88-PURL-gpo86796/pdf/GOVPUB-Y3_N88-PURL-gpo86796.pdf">NUREG/CR-2726</a>, <a href="https://www.nrc.gov/cdn/legacy/reading-rm/training/reactor-concepts-training-course.pdf">NRC Reactor Concepts</a>)</td></tr>
+                <tr><td>Température eau alimentaire MT4</td><td>245 °C</td><td><span class="badge">FIXÉ</span>Consigne</td></tr>
+                <tr><td>Turbine / réseau à 100 %</td><td>2 785 MWth / 900 MWe</td><td>Rendement global simplifié : 32,3 %</td></tr>
+                <tr><td>Aspersion maximale totale</td><td>102 m³/h</td><td><a href="https://www.govinfo.gov/content/pkg/GOVPUB-Y3_N88-PURL-gpo72991/pdf/GOVPUB-Y3_N88-PURL-gpo72991.pdf">NUREG/IA-0020, Doel 4</a></td></tr>
+                <tr><td>Chaufferettes continues initiales</td><td>1 921,5 kW</td><td><span class="badge">CALÉ</span>360 kW de pertes + compensation de l’aspersion nominale</td></tr>
+                <tr><td>Soupape de décharge / soupapes de sûreté</td><td>160–164 / 166–170 bar</td><td><span class="badge">SIMPLIFIÉ</span>Débits maximaux 15 / 50 kg/s</td></tr>
+                <tr><td>Cuve</td><td>100,81 m³</td><td rowspan="4"><a href="https://www.govinfo.gov/content/pkg/GOVPUB-Y3_N88-PURL-gpo48102/pdf/GOVPUB-Y3_N88-PURL-gpo48102.pdf">NUREG/IA-0426, Almaraz I</a></td></tr>
+                <tr><td>GV primaire équivalent</td><td>96,84 m³</td></tr>
+                <tr><td>GMPP équivalente</td><td>12,06 m³</td></tr>
+                <tr><td>Pressuriseur</td><td>39,64 m³</td></tr>
+                <tr><td>Volume primaire thermique hors branches et pressuriseur</td><td>209,71 m³</td><td>Cuve + GV équivalent + GMPP équivalente</td></tr>
+                <tr><td>Dilatation volumique simplifiée du CPP</td><td>αv = 0,0032 K⁻¹</td><td><span class="badge">ESTIMÉ</span>Autour de 306 °C / 155 bar</td></tr>
+                <tr><td>Masse cœur / Cp combustible</td><td>150 t / 300 J·kg⁻¹·K⁻¹</td><td><span class="badge">ESTIMÉ</span><a href="https://www-pub.iaea.org/MTCD/Publications/PDF/te_1496_web.pdf">IAEA-TECDOC-1496</a></td></tr>
+                <tr><td>KCŒUR</td><td>5,64 MW/K</td><td>Calé à 2 785 MW, 800 °C / 306 °C</td></tr>
+                <tr><td>KGV équivalent</td><td>132,62 MW/K</td><td>Calé à 2 785 MW, 306 °C / 285 °C</td></tr>
+                <tr><td>Lois de saturation</td><td>Région 4 IAPWS-IF97</td><td><a href="https://www.iapws.org/relguide/IF97-Rev.html">IAPWS</a></td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card model-card">
+            <h2>Champs temps réel identifiés</h2>
+            <p><span class="badge">CAPTEURS</span> <strong>POW1</strong> <em>puissance nucléaire RPN</em>, <strong>MT1</strong> <em>température branche chaude</em>, <strong>MT2</strong> <em>température branche froide</em>, <strong>MP1</strong> <em>pression primaire</em>, <strong>MN1</strong> <em>niveau pressuriseur</em>, <strong>POW2</strong> <em>puissance électrique réseau</em>, <strong>MT3</strong> <em>température vapeur</em>, <strong>MT4</strong> <em>température eau alimentaire</em>, <strong>MD1</strong> <em>débit vapeur</em>, <strong>MP2</strong> <em>pression secondaire GV</em>.</p>
+            <p><span class="badge">ACTIONNEURS</span> <strong>POSG</strong> <em>position des grappes</em>, <strong>QASP</strong> <em>débit d’aspersion</em>, <strong>PCHF</strong> <em>puissance des chaufferettes</em>, <strong>QDEC</strong> <em>débit de décharge RCV</em>. <strong>QCHA</strong> <em>débit de charge RCV</em> est fixé à 15 m³/h et n’est plus un actionneur.</p>
+            <p><span class="badge">CALCULÉS</span> <strong>REAC</strong> <em>réactivité</em>, <strong>PNUC</strong> <em>puissance nucléaire interne</em>, <strong>PTHC</strong> <em>puissance thermique cœur</em>, <strong>PGV1</strong> <em>puissance échangée au GV</em>, <strong>PTUR</strong> <em>puissance turbine</em>, <strong>TMOY</strong> <em>température moyenne primaire</em>, <strong>TPZR</strong> <em>température pressuriseur</em>, <strong>TCRA</strong> <em>température crayons</em>, <strong>PLIN</strong> <em>puissance linéique</em>, <strong>DNBR</strong>, <strong>QPRI</strong> <em>débit primaire</em>, <strong>IMCH</strong> <em>immersion chaufferettes</em>, <strong>QSVP</strong> <em>débit soupapes pressuriseur</em>.</p>
+          </article>
+
+          <article class="card model-card">
+            <h2>Limites assumées</h2>
+            <ul>
+              <li>Pas de neutronique spatiale ; un seul groupe retardé effectif, sans xénon ni bore.</li>
+              <li>Un seul GV équivalent ; pas de niveau GV, de dynamique turbine/alternateur ni de condenseur.</li>
+              <li>Propriétés thermiques constantes hors lois de saturation.</li>
+              <li>Dénoyage des chaufferettes, poche vapeur et soupapes représentés par des lois globales pédagogiques.</li>
+              <li>DNBR et état du cœur : indicateurs pédagogiques, non corrélations industrielles.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const C = {
+      PNOM: 2785,
+      P_ELEC_NOM: 900,
+      BETA_PCM: 750,
+      PROMPT_S: 0.1,
+      TAVG_REF: 306,
+      ALPHA_TEMP: -50,
+      ALPHA_ROD: 15,
+      ROD_REF: 50,
+      FLOW_PRIMARY: 15000,
+      CP_PRIMARY: 5500,
+      RHO_PRIMARY: 720,
+      V_PRIMARY: 209.71,
+      M_CORE: 150000,
+      CP_CORE: 300,
+      TFUEL_REF: 800,
+      TSAT_SEC_REF: 285,
+      TFW: 245,
+      V_PRESS: 39.64,
+      ALPHA_WATER: 0.0032,
+      C_PRESS: 120e6,
+      C_SECONDARY: 20e9,
+      DECAY_CONST: 0.08,
+      HEATER_BALANCE: 360,
+      CHARGE_FLOW_M3H: 15,
+      SPRAY_FLOW_M3H: 102,
+      SPRAY_EFFECTIVENESS: 0.25,
+      TPZR_REF: 344.79,
+      TCOLD_REF: 289.12,
+      HEATER_UNCOVER_LEVEL: 25,
+      HEATER_DRY_LEVEL: 10,
+      PORV_START_BAR: 160,
+      PORV_FULL_BAR: 164,
+      PORV_FLOW_MAX: 15,
+      SAFETY_START_BAR: 166,
+      SAFETY_FULL_BAR: 170,
+      SAFETY_FLOW_MAX: 50,
+      RELIEF_ENTHALPY: 1.0e6,
+      DELTA_H_STEAM: 1.70e6,
+      PLIN_NOM: 210,
+      DNBR_NOM: 1.65,
+      P_CRITICAL_BAR: 220.64,
+      SUBCOOLING_GAIN: 0.015,
+      STEP: 0.02
+    };
+    C.M_PRIMARY = C.V_PRIMARY * C.RHO_PRIMARY;
+    C.C_PRIMARY = C.M_PRIMARY * C.CP_PRIMARY;
+    C.V_LIQUID_REF = C.V_PRIMARY + 0.5 * C.V_PRESS;
+    C.M_CPP_REF = C.V_LIQUID_REF * C.RHO_PRIMARY;
+    C.BETA = C.BETA_PCM * 1e-5;
+    C.C_CORE = C.M_CORE * C.CP_CORE;
+    C.K_CORE = C.PNOM / (C.TFUEL_REF - C.TAVG_REF);
+    C.PGV_NOM = C.PNOM;
+    C.K_GV = C.PGV_NOM / (C.TAVG_REF - C.TSAT_SEC_REF);
+    C.ETA_ELECTRIC = C.P_ELEC_NOM / C.PNOM;
+    C.HEATER_CONTINUOUS = C.HEATER_BALANCE
+      + (C.SPRAY_FLOW_M3H / 3600) * C.RHO_PRIMARY * C.CP_PRIMARY
+        * (C.TPZR_REF - C.TCOLD_REF) * C.SPRAY_EFFECTIVENESS / 1000;
+    Object.freeze(C);
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n, digits = 1) => Number(n).toLocaleString("fr-FR", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+    const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+    function saturationPressureMPa(tempC) {
+      const T = tempC + 273.15;
+      const n1 = 1167.0521452767, n2 = -724213.16703206;
+      const n3 = -17.073846940092, n4 = 12020.82470247;
+      const n5 = -3232555.0322333, n6 = 14.91510861353;
+      const n7 = -4823.2657361591, n8 = 405113.40542057;
+      const n9 = -0.23855557567849, n10 = 650.17534844798;
+      const theta = T + n9 / (T - n10);
+      const A = theta * theta + n1 * theta + n2;
+      const B = n3 * theta * theta + n4 * theta + n5;
+      const CC = n6 * theta * theta + n7 * theta + n8;
+      return Math.pow((2 * CC) / (-B + Math.sqrt(B * B - 4 * A * CC)), 4);
+    }
+
+    function initialState() {
+      return {
+        time: 0,
+        power: C.PNOM,
+        neutronDensity: 1,
+        precursors: C.BETA / (C.PROMPT_S * C.DECAY_CONST),
+        tfuel: C.TFUEL_REF,
+        tavg: C.TAVG_REF,
+        tpzr: C.TPZR_REF,
+        tsatSec: C.TSAT_SEC_REF,
+        level: 50,
+        primaryMass: C.M_CPP_REF,
+        primaryDensity: C.RHO_PRIMARY,
+        cppVolume: C.V_LIQUID_REF,
+        rods: 50,
+        spray: true,
+        heater: C.HEATER_CONTINUOUS,
+        letdown: 15,
+        reactivity: 0,
+        pthCore: C.PNOM,
+        pgv: C.PGV_NOM,
+        turbinePct: 100,
+        turbineThermal: C.PNOM,
+        gridElectric: C.P_ELEC_NOM,
+        pressurePrimary: 15.5,
+        pressureSecondary: 6.92,
+        thot: 322.88,
+        tcold: C.TCOLD_REF,
+        steamFlow: C.PNOM * 1e6 / C.DELTA_H_STEAM,
+        heaterImmersion: 1,
+        porvOpen: 0,
+        safetyOpen: 0,
+        reliefFlow: 0,
+        dnbr: 1.65,
+        alarms: [],
+        stateLabel: "NORMAL",
+        stateClass: ""
+      };
+    }
+
+    let s = initialState();
+    let running = false;
+    let speed = 1;
+    let lastFrame = performance.now();
+    let accumulator = 0;
+    let nextSample = 0;
+    let history = [];
+
+    function readControls() {
+      s.rods = +$("rods").value;
+      s.spray = $("spray").checked;
+      s.heater = +$("heater").value;
+      s.letdown = +$("letdown").value;
+    }
+
+    function advancePointKinetics(dt, reactivityPcm) {
+      const rho = reactivityPcm * 1e-5;
+      const derivative = (n, precursor) => ({
+        n: ((rho - C.BETA) / C.PROMPT_S) * n + C.DECAY_CONST * precursor,
+        precursor: (C.BETA / C.PROMPT_S) * n - C.DECAY_CONST * precursor
+      });
+      const n0 = s.neutronDensity;
+      const c0 = s.precursors;
+      const k1 = derivative(n0, c0);
+      const k2 = derivative(n0 + 0.5 * dt * k1.n, c0 + 0.5 * dt * k1.precursor);
+      const k3 = derivative(n0 + 0.5 * dt * k2.n, c0 + 0.5 * dt * k2.precursor);
+      const k4 = derivative(n0 + dt * k3.n, c0 + dt * k3.precursor);
+      s.neutronDensity = Math.max(1e-12, n0 + dt * (k1.n + 2 * k2.n + 2 * k3.n + k4.n) / 6);
+      s.precursors = Math.max(0, c0 + dt * (k1.precursor + 2 * k2.precursor + 2 * k3.precursor + k4.precursor) / 6);
+      s.power = C.PNOM * s.neutronDensity;
+      if (!Number.isFinite(s.power)) {
+        running = false;
+        s.power = Number.MAX_VALUE;
+      }
+    }
+
+    function evaluateAlarms() {
+      const alarms = [];
+      const range = (signal, label, value, normalLow, normalHigh, dangerLow, dangerHigh) => {
+        if (value < dangerLow || value > dangerHigh) {
+          alarms.push({ signal, level: "danger", label: `${label} ${value < dangerLow ? "très bas" : "très haut"}` });
+        } else if (value < normalLow || value > normalHigh) {
+          alarms.push({ signal, level: "warning", label: `${label} ${value < normalLow ? "bas" : "haut"}` });
+        }
+      };
+      const high = (signal, label, value, warning, danger) => {
+        if (value >= danger) alarms.push({ signal, level: "danger", label: `${label} très haut` });
+        else if (value >= warning) alarms.push({ signal, level: "warning", label: `${label} haut` });
+      };
+      const low = (signal, label, value, warning, danger) => {
+        if (value <= danger) alarms.push({ signal, level: "danger", label: `${label} très bas` });
+        else if (value <= warning) alarms.push({ signal, level: "warning", label: `${label} bas` });
+      };
+
+      range("pow1", "POW1", 100 * s.power / C.PNOM, 90, 110, 75, 125);
+      range("mt1", "MT1", s.thot, 315, 330, 300, 345);
+      range("mt2", "MT2", s.tcold, 280, 298, 270, 310);
+      range("mp1", "MP1", s.pressurePrimary * 10, 150, 160, 145, 166);
+      range("mn1", "MN1", s.level, 25, 75, 10, 90);
+      range("tpzr", "TPZR", s.tpzr, 342, 348, 336, 355);
+      range("tavg", "TMOY", s.tavg, 300, 312, 294, 320);
+      high("tfuel", "TCRA", s.tfuel, 1200, 1700);
+      low("dnbr", "DNBR", s.dnbr, 1.45, 1.30);
+      range("pthc", "PTHC", 100 * s.pthCore / C.PNOM, 90, 110, 75, 125);
+      range("pgv", "PGV1", 100 * s.pgv / C.PNOM, 90, 110, 75, 125);
+      high("reactivity", "REAC", Math.abs(s.reactivity), 100, 300);
+      range("mt3", "MT3", s.tsatSec, 280, 290, 275, 295);
+      range("mp2", "MP2", s.pressureSecondary * 10, 65, 75, 60, 80);
+
+      if (s.heaterImmersion < 0.25) {
+        alarms.push({ signal: "heaterImmersion", level: "danger", label: "IMCH — chaufferettes dénoyées" });
+      } else if (s.heaterImmersion < 0.999) {
+        alarms.push({ signal: "heaterImmersion", level: "warning", label: "IMCH — dénoyage partiel" });
+      }
+      if (s.safetyOpen > 0) {
+        alarms.push({ signal: "relief", level: "danger", label: "QSVP — soupapes de sûreté ouvertes" });
+      } else if (s.porvOpen > 0) {
+        alarms.push({ signal: "relief", level: "warning", label: "QSVP — soupape de décharge ouverte" });
+      }
+      if (s.reliefFlow > 0 && s.level > 90) {
+        alarms.push({ signal: "relief", level: "danger", label: "Risque de rejet liquide pressuriseur" });
+      }
+      return alarms;
+    }
+
+    function solveStep(dt) {
+      readControls();
+
+      s.reactivity = C.ALPHA_TEMP * (s.tavg - C.TAVG_REF)
+        + C.ALPHA_ROD * (C.ROD_REF - s.rods);
+      advancePointKinetics(dt, s.reactivity);
+
+      s.pthCore = Math.max(0, C.K_CORE * (s.tfuel - s.tavg));
+      s.pgv = Math.max(0, C.K_GV * (s.tavg - s.tsatSec));
+
+      s.tfuel += ((s.power - s.pthCore) * 1e6 / C.C_CORE) * dt;
+      s.tavg += ((s.pthCore - s.pgv) * 1e6 / C.C_PRIMARY) * dt;
+
+      s.turbineThermal = (s.turbinePct / 100) * C.PNOM;
+      s.gridElectric = C.ETA_ELECTRIC * s.turbineThermal;
+      const secondaryBalanceW = (s.pgv - s.turbineThermal) * 1e6;
+      s.tsatSec += (secondaryBalanceW / C.C_SECONDARY) * dt;
+
+      const pressureBeforeReliefBar = saturationPressureMPa(s.tpzr) * 10;
+      s.porvOpen = clamp(
+        (pressureBeforeReliefBar - C.PORV_START_BAR) / (C.PORV_FULL_BAR - C.PORV_START_BAR),
+        0, 1
+      );
+      s.safetyOpen = clamp(
+        (pressureBeforeReliefBar - C.SAFETY_START_BAR) / (C.SAFETY_FULL_BAR - C.SAFETY_START_BAR),
+        0, 1
+      );
+      s.reliefFlow = s.porvOpen * C.PORV_FLOW_MAX + s.safetyOpen * C.SAFETY_FLOW_MAX;
+
+      s.heaterImmersion = clamp(
+        (s.level - C.HEATER_DRY_LEVEL) / (C.HEATER_UNCOVER_LEVEL - C.HEATER_DRY_LEVEL),
+        0, 1
+      );
+      const sprayMdot = s.spray
+        ? (C.SPRAY_FLOW_M3H / 3600) * C.RHO_PRIMARY
+        : 0;
+      const sprayCoolingW = sprayMdot * C.CP_PRIMARY * Math.max(0, s.tpzr - s.tcold)
+        * C.SPRAY_EFFECTIVENESS;
+      const heaterNetW = (s.heater * s.heaterImmersion - C.HEATER_BALANCE) * 1000;
+      const reliefCoolingW = s.reliefFlow * C.RELIEF_ENTHALPY;
+      const steamSpaceFactor = clamp((100 - s.level) / 50, 0.20, 1.50);
+      const effectivePressurizerCapacity = C.C_PRESS * steamSpaceFactor;
+      s.tpzr += ((heaterNetW - sprayCoolingW - reliefCoolingW) / effectivePressurizerCapacity) * dt;
+      s.tpzr = clamp(s.tpzr, 330, 360);
+
+      const inventoryMassRate = ((C.CHARGE_FLOW_M3H - s.letdown) / 3600) * C.RHO_PRIMARY - s.reliefFlow;
+      s.primaryMass += inventoryMassRate * dt;
+      const expansionDenominator = Math.max(0.2, 1 + C.ALPHA_WATER * (s.tavg - C.TAVG_REF));
+      s.primaryDensity = C.RHO_PRIMARY / expansionDenominator;
+      s.cppVolume = s.primaryMass / s.primaryDensity;
+      const pressurizerLiquidVolume = s.cppVolume - C.V_PRIMARY;
+      s.level = 100 * pressurizerLiquidVolume / C.V_PRESS;
+
+      const deltaT = s.pthCore * 1e6 / (C.FLOW_PRIMARY * C.CP_PRIMARY);
+      s.thot = s.tavg + deltaT / 2;
+      s.tcold = s.tavg - deltaT / 2;
+      s.pressurePrimary = saturationPressureMPa(s.tpzr);
+      s.pressureSecondary = saturationPressureMPa(s.tsatSec);
+      s.steamFlow = s.turbineThermal * 1e6 / C.DELTA_H_STEAM;
+
+      const plin = C.PLIN_NOM * s.power / C.PNOM;
+      const heatFluxRatio = Math.max(1e-6, plin / C.PLIN_NOM);
+      const pressureBar = s.pressurePrimary * 10;
+      const reducedPressure = clamp(pressureBar / C.P_CRITICAL_BAR, 0.01, 0.99);
+      const reducedPressureRef = 155 / C.P_CRITICAL_BAR;
+      const pressureFactor = Math.sqrt(
+        (reducedPressure * (1 - reducedPressure))
+        / (reducedPressureRef * (1 - reducedPressureRef))
+      );
+      const subcooling = Math.max(0, s.tpzr - s.thot);
+      const subcoolingRef = 344.79 - 322.88;
+      const subcoolingFactor = Math.max(0.15,
+        1 + C.SUBCOOLING_GAIN * (subcooling - subcoolingRef));
+      s.dnbr = C.DNBR_NOM * pressureFactor * subcoolingFactor / heatFluxRatio;
+
+      s.alarms = evaluateAlarms();
+      const hasDanger = s.alarms.some(a => a.level === "danger");
+      s.stateLabel = hasDanger ? "ALARME ROUGE" : s.alarms.length ? "ALARME ORANGE" : "NORMAL";
+      s.stateClass = hasDanger ? "danger" : s.alarms.length ? "warn" : "";
+
+      s.time += dt;
+    }
+
+    function sampleHistory(force = false) {
+      if (!force && s.time < nextSample) return;
+      nextSample = s.time + 0.25;
+      history.push({
+        t: s.time,
+        nuclear: 100 * s.power / C.PNOM,
+        gv: 100 * s.pgv / C.PNOM,
+        turbine: s.turbinePct,
+        reactivity: s.reactivity
+      });
+      const cutoff = s.time - 300;
+      history = history.filter(p => p.t >= cutoff);
+    }
+
+    function renderAlarms() {
+      const rank = { warning: 1, danger: 2 };
+      const bySignal = new Map();
+      for (const alarm of s.alarms) {
+        const previous = bySignal.get(alarm.signal);
+        if (!previous || rank[alarm.level] > rank[previous]) bySignal.set(alarm.signal, alarm.level);
+      }
+      document.querySelectorAll("[data-signal]").forEach(node => {
+        node.classList.remove("alarm-warning", "alarm-danger");
+        const level = bySignal.get(node.dataset.signal);
+        if (level) node.classList.add(`alarm-${level}`);
+      });
+
+      const strip = $("alarmStrip");
+      strip.className = "alarm-strip";
+      if (!s.alarms.length) {
+        $("alarmSummary").textContent = "Aucune alarme — paramètres dans le domaine normal";
+        return;
+      }
+      const hasDanger = s.alarms.some(a => a.level === "danger");
+      strip.classList.add(hasDanger ? "alarm-danger" : "alarm-warning");
+      const ordered = [...s.alarms].sort((a, b) => rank[b.level] - rank[a.level]);
+      const shown = ordered.slice(0, 3).map(a => a.label).join(" · ");
+      const remaining = ordered.length > 3 ? ` · +${ordered.length - 3}` : "";
+      $("alarmSummary").textContent = `${hasDanger ? "ALARME ROUGE" : "ALARME ORANGE"} — ${shown}${remaining}`;
+    }
+
+    function updateUI() {
+      const sprayFlow = s.spray ? C.SPRAY_FLOW_M3H : 0;
+      $("pow1").value = `${fmt(100 * s.power / C.PNOM, 1)} % PN`;
+      $("mt1").value = `${fmt(s.thot, 1)} °C`;
+      $("mt2").value = `${fmt(s.tcold, 1)} °C`;
+      $("mp1").value = `${fmt(s.pressurePrimary * 10, 1)} bar`;
+      $("mn1").value = `${fmt(s.level, 1)} %`;
+      $("pow2").value = `${fmt(s.gridElectric, 0)} MWe`;
+      $("mt3").value = `${fmt(s.tsatSec, 1)} °C`;
+      $("mt4").value = `${fmt(C.TFW, 1)} °C`;
+      $("md1").value = `${fmt(s.steamFlow / 1000, 2)} t/s`;
+      $("mp2").value = `${fmt(s.pressureSecondary * 10, 1)} bar`;
+
+      $("aRods").value = `${fmt(s.rods, 0)} %`;
+      $("aSpray").value = `${fmt(sprayFlow, 0)} m³/h`;
+      $("aHeater").value = `${fmt(s.heater, 1)} kW`;
+      $("aLetdown").value = `${fmt(s.letdown, 0)} m³/h`;
+      $("reactivity").value = `${fmt(s.reactivity, 1)} pcm`;
+      $("turbinePct").value = `${fmt(s.turbinePct, 1)} % · ${fmt(s.turbineThermal, 0)} MWth`;
+      $("tavg").value = `${fmt(s.tavg, 1)} °C`;
+      $("tpzrInfo").value = `${fmt(s.tpzr, 1)} °C`;
+      $("plin").value = `${fmt(C.PLIN_NOM * s.power / C.PNOM, 0)} W/cm`;
+      $("dnbr").value = fmt(s.dnbr, 2);
+      $("pgv").value = `${fmt(s.pgv, 0)} MWth`;
+      $("pthc").value = `${fmt(s.pthCore, 0)} MWth`;
+      $("tfuel").value = `${fmt(s.tfuel, 0)} °C`;
+      $("heaterImmersion").value = `${fmt(100 * s.heaterImmersion, 1)} %`;
+
+      const reliefLabel = s.safetyOpen > 0
+        ? "Sûreté ouvertes"
+        : s.porvOpen > 0 ? "Décharge ouverte" : "Fermées";
+      const reliefLabelShort = s.safetyOpen > 0
+        ? "Sûreté"
+        : s.porvOpen > 0 ? "Décharge" : "Fermées";
+      $("reliefStatus").value = `${reliefLabel} · ${fmt(s.reliefFlow, 1)} kg/s`;
+
+      $("plantState").textContent = `État installation : ${s.stateLabel}`;
+      $("plantState").className = `plant-state ${s.stateClass}`.trim();
+
+      $("svPow1").textContent = `${fmt(100 * s.power / C.PNOM, 1)} % PN`;
+      $("svPthc").textContent = `${fmt(s.pthCore, 0)} MWth`;
+      $("svMT1").textContent = `${fmt(s.thot, 1)} °C`;
+      $("svMT2").textContent = `${fmt(s.tcold, 1)} °C`;
+      $("svMP1").textContent = `${fmt(s.pressurePrimary * 10, 1)} bar`;
+      $("svMN1").textContent = `${fmt(s.level, 1)} %`;
+      $("svTpzr").textContent = `${fmt(s.tpzr, 1)} °C`;
+      $("svRods").textContent = `${fmt(s.rods, 0)} % insérés`;
+      $("svSpray").textContent = `${fmt(sprayFlow, 0)} m³/h`;
+      $("svHeater").textContent = `${fmt(s.heater, 1)} kW`;
+      $("svCharge").textContent = `${fmt(C.CHARGE_FLOW_M3H, 0)} m³/h`;
+      $("svLetdown").textContent = `${fmt(s.letdown, 0)} m³/h`;
+      $("svRelief").textContent = `${reliefLabelShort} · ${fmt(s.reliefFlow, 1)} kg/s`;
+      $("svMT3").textContent = `${fmt(s.tsatSec, 1)} °C`;
+      $("svMP2").textContent = `${fmt(s.pressureSecondary * 10, 1)} bar`;
+      $("svMD1").textContent = `${fmt(s.steamFlow / 1000, 2)} t/s`;
+      $("svTurbine").textContent = `${fmt(s.turbinePct, 1)} % · ${fmt(s.turbineThermal, 0)} MWth`;
+      $("svPow2").textContent = `${fmt(s.gridElectric, 0)} MWe`;
+      $("svMT4").textContent = `${fmt(C.TFW, 1)} °C`;
+
+      const visibleLevel = clamp(s.level, 0, 100);
+      const liquidHeight = 188 * visibleLevel / 100;
+      const liquidY = 429 - liquidHeight;
+      $("pressLiquid").setAttribute("y", liquidY.toFixed(2));
+      $("pressLiquid").setAttribute("height", liquidHeight.toFixed(2));
+      $("pressLevelLine").setAttribute("d", `M331 ${liquidY.toFixed(2)} H439`);
+      $("pressLevelLine").style.display = visibleLevel <= 0 ? "none" : "";
+      $("heaterCoil").style.opacity = String(0.25 + 0.75 * s.heaterImmersion);
+      $("reliefLine").classList.toggle("active", s.reliefFlow > 0.01);
+      $("reliefValveSymbol").classList.toggle("valve-active", s.reliefFlow > 0.01);
+      renderAlarms();
+
+      $("rodsOut").value = `${fmt(s.rods, 0)} %`;
+      $("heaterOut").value = `${fmt(s.heater, 1)} kW`;
+      $("letdownOut").value = `${fmt(s.letdown, 0)} m³/h`;
+      $("sprayText").textContent = s.spray ? "Ouverte" : "Fermée";
+
+      const t = Math.max(0, Math.floor(s.time));
+      const hh = String(Math.floor(t / 3600)).padStart(2, "0");
+      const mm = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
+      const ss = String(t % 60).padStart(2, "0");
+      $("simClock").textContent = `${hh}:${mm}:${ss}`;
+      $("runStatus").textContent = running ? "Simulation en cours" : "Simulation en pause";
+      $("runBtn").textContent = running ? "Pause" : "Démarrer";
+      drawChart();
+    }
+
+    function drawChart() {
+      drawPowerChart();
+      drawReactivityChart();
+    }
+
+    function prepareCanvas(id) {
+      const canvas = $(id);
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const width = Math.round(rect.width * dpr);
+      const height = Math.round(rect.height * dpr);
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = rect.width, h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+      return { ctx, w, h };
+    }
+
+    function timeScale(w, margin) {
+      const tMax = Math.max(60, s.time);
+      const tMin = Math.max(0, tMax - 300);
+      const width = w - margin.l - margin.r;
+      return {
+        tMin,
+        tMax,
+        x: t => margin.l + width * (t - tMin) / Math.max(1, tMax - tMin)
+      };
+    }
+
+    function drawPowerChart() {
+      const prepared = prepareCanvas("historyChart");
+      if (!prepared) return;
+      const { ctx, w, h } = prepared;
+      const m = { l: 52, r: 14, t: 12, b: 25 };
+      const pw = w - m.l - m.r, ph = h - m.t - m.b;
+      ctx.font = "11px Segoe UI";
+      ctx.fillStyle = "#6d7780";
+      ctx.strokeStyle = "#e2e6e9";
+      ctx.lineWidth = 1;
+      const visible = history.filter(p => p.t >= Math.max(0, s.time - 300));
+      const observedMax = Math.max(100, ...visible.flatMap(p => [p.nuclear, p.gv, p.turbine]
+        .filter(Number.isFinite)));
+      const yMax = Math.max(125, Math.ceil((observedMax * 1.08) / 25) * 25);
+      for (let i = 0; i <= 4; i++) {
+        const y = m.t + ph * i / 4;
+        ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke();
+        ctx.fillText(fmt(yMax * (1 - i / 4), 0), 5, y + 4);
+      }
+      ctx.fillText("% PN", 5, 10);
+      const scale = timeScale(w, m);
+      const yOf = v => m.t + ph * (1 - Math.max(0, v) / yMax);
+      const series = [
+        ["nuclear", "#d7502e"],
+        ["gv", "#138d7f"],
+        ["turbine", "#2f76bc"]
+      ];
+      for (const [key, color] of series) {
+        ctx.beginPath();
+        let started = false;
+        for (const p of visible) {
+          const x = scale.x(p.t), y = yOf(p[key]);
+          if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      }
+      ctx.fillStyle = "#6d7780";
+      ctx.fillText("−5 min", m.l, h - 5);
+      ctx.fillText("maintenant", w - m.r - 53, h - 5);
+    }
+
+    function drawReactivityChart() {
+      const prepared = prepareCanvas("reactivityChart");
+      if (!prepared) return;
+      const { ctx, w, h } = prepared;
+      const m = { l: 52, r: 14, t: 8, b: 21 };
+      const ph = h - m.t - m.b;
+      const visible = history.filter(p => p.t >= Math.max(0, s.time - 300));
+      const maxAbs = Math.max(25, ...visible.map(p => Math.abs(p.reactivity || 0)));
+      const limit = Math.ceil((maxAbs * 1.1) / 25) * 25;
+      const scale = timeScale(w, m);
+      const yOf = v => m.t + ph * (0.5 - v / (2 * limit));
+      ctx.font = "11px Segoe UI";
+      ctx.fillStyle = "#6d7780";
+      ctx.strokeStyle = "#e2e6e9";
+      ctx.lineWidth = 1;
+      for (const value of [limit, 0, -limit]) {
+        const y = yOf(value);
+        ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke();
+        ctx.fillText(fmt(value, 0), 5, y + 4);
+      }
+      ctx.beginPath();
+      let started = false;
+      for (const p of visible) {
+        const x = scale.x(p.t), y = yOf(p.reactivity || 0);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "#138d7f";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#6d7780";
+      ctx.fillText("−5 min", m.l, h - 4);
+      ctx.fillText("maintenant", w - m.r - 53, h - 4);
+    }
+
+    function reset() {
+      running = false;
+      s = initialState();
+      $("rods").value = 50;
+      $("spray").checked = true;
+      $("heater").value = C.HEATER_CONTINUOUS;
+      $("letdown").value = 15;
+      history = [];
+      nextSample = 0;
+      accumulator = 0;
+      sampleHistory(true);
+      updateUI();
+    }
+
+    function frame(now) {
+      const realDt = Math.min(0.25, (now - lastFrame) / 1000);
+      lastFrame = now;
+      if (running) {
+        accumulator += realDt * speed;
+        let loops = 0;
+        while (accumulator >= C.STEP && loops < 500) {
+          solveStep(C.STEP);
+          accumulator -= C.STEP;
+          loops++;
+        }
+        sampleHistory();
+      } else {
+        readControls();
+      }
+      updateUI();
+      requestAnimationFrame(frame);
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        $(`view-${tab.dataset.view}`).classList.add("active");
+        drawChart();
+      });
+    });
+
+    $("runBtn").addEventListener("click", () => { running = !running; updateUI(); });
+    $("resetBtn").addEventListener("click", reset);
+    $("speed").addEventListener("change", e => { speed = +e.target.value; });
+    ["rods", "spray", "heater", "letdown"].forEach(id => {
+      $(id).addEventListener("input", () => { readControls(); updateUI(); });
+      $(id).addEventListener("change", () => { readControls(); updateUI(); });
+    });
+    window.addEventListener("resize", drawChart);
+
+    reset();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
