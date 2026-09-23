@@ -76,6 +76,45 @@
     }
     .tab:hover { color: #fff; background: rgba(255,255,255,.04); }
     .tab.active { color: #fff; border-bottom-color: #ff7652; }
+    .tabs-more { position: relative; display: flex; align-self: stretch; }
+    .tabs-more > summary {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      border-bottom: 3px solid transparent;
+      color: #b8c3ca;
+      cursor: pointer;
+      font-size: 24px;
+      font-weight: 500;
+      list-style: none;
+    }
+    .tabs-more > summary::-webkit-details-marker { display: none; }
+    .tabs-more > summary:hover, .tabs-more[open] > summary { color: #fff; background: rgba(255,255,255,.04); }
+    .tabs-more:has(.tab.active) > summary { color: #fff; border-bottom-color: #ff7652; }
+    .tabs-more > summary:focus-visible { outline: 2px solid #ff7652; outline-offset: -2px; }
+    .tabs-more-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      z-index: 35;
+      min-width: 210px;
+      padding: 5px;
+      border: 1px solid #45535d;
+      border-radius: 0 0 9px 9px;
+      background: #18242d;
+      box-shadow: 0 10px 22px rgba(0,0,0,.23);
+    }
+    .tabs-more-menu .tab {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      padding: 11px 12px;
+      border: 0;
+      border-radius: 5px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .tabs-more-menu .tab.active { background: rgba(255,118,82,.17); }
 
     .runbar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     .clock {
@@ -576,7 +615,8 @@
     }
     .palette-item:hover { border-color: #9ba8b0; background: #eef3f5; }
     .reg-main { min-width: 0; }
-    .reg-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid #e0e4e7; }
+    .reg-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 10px 12px; border-bottom: 1px solid #e0e4e7; }
+    .reg-toolbar > * { flex: 0 0 auto; }
     .reg-toolbar .status { margin-left: auto; color: #5e6b74; font-size: 12px; }
     .solutions-dialog {
       width: min(640px, calc(100vw - 32px));
@@ -942,8 +982,13 @@
       <button class="tab active" data-view="synoptic">Synoptique</button>
       <button class="tab" data-view="load">Programme de charge</button>
       <button class="tab" data-view="regulation">CC-REGUL</button>
-      <button class="tab" data-view="alarms">Seuils d’alarmes</button>
-      <button class="tab" data-view="model">Modèle physique</button>
+      <details class="tabs-more" id="tabsMore">
+        <summary aria-label="Autres onglets" title="Autres onglets">+</summary>
+        <div class="tabs-more-menu" role="group" aria-label="Autres onglets">
+          <button class="tab" data-view="alarms" aria-label="Seuils d’alarmes">Seuils d’alarmes</button>
+          <button class="tab" data-view="model" aria-label="Modèle physique">Modèle physique</button>
+        </div>
+      </details>
     </nav>
     <div class="runbar">
       <span id="runStatus">Simulation en pause</span>
@@ -1396,7 +1441,6 @@
               <input id="regModelFile" type="file" accept=".json,.simurep.json,application/json" hidden>
               <button class="btn" id="undoReg" type="button" title="Ctrl+Z" disabled>Annuler</button>
               <button class="btn" id="redoReg" type="button" title="Ctrl+Y ou Ctrl+Maj+Z" disabled>Rétablir</button>
-              <button class="btn" id="validateReg" type="button">Analyser la chaîne</button>
               <button class="btn" id="toggleRegulation" type="button" aria-pressed="false">Activer les régulations</button>
               <button class="btn" id="pasteRegNode" type="button">Coller</button>
               <button class="btn" id="zoomOutReg" type="button" aria-label="Dézoomer">−</button>
@@ -4942,29 +4986,6 @@
         : { okay: false, message: "Pression incomplète : MP1−PREF → PID → courbe PCHF et comparateur TOR QASP." };
     }
 
-    function regulationChainReady() {
-      const connectedOutputs = [...REG_MANUAL_OUTPUT_TYPES]
-        .filter(type => regOutputConnected(type))
-        .map(type => BLOCK_TYPES[type].label);
-      const diagnostics = evaluateRegulationGraph(0, false).diagnostics;
-      const okay = connectedOutputs.length > 0 && diagnostics.length === 0;
-      const outputText = connectedOutputs.length
-        ? `Sorties reliées : ${connectedOutputs.join(", ")}.`
-        : "Aucune sortie d’actionneur n’est reliée.";
-      return {
-        okay,
-        message: `${outputText}${diagnostics.length ? ` ${diagnostics.join(" ")}` : " Le graphe sera exécuté exactement tel qu’il est câblé."}`
-      };
-    }
-
-    function validateRegEditor() {
-      const validation = regulationChainReady();
-      $("regStatus").textContent = validation.okay
-        ? `Diagnostic : ${validation.message}`
-        : `Diagnostic non bloquant : ${validation.message}`;
-      return validation.okay;
-    }
-
     function rodSpeedLaw(error) {
       const sign = Math.sign(error);
       const a = Math.abs(error);
@@ -5475,6 +5496,7 @@
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === tab));
+        $("tabsMore").open = false;
         document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
         $(`view-${tab.dataset.view}`).classList.add("active");
         drawChart();
@@ -5486,6 +5508,12 @@
           if (!regViewInitialized) fitRegulationView(); else updateRegViewport();
         }
       });
+    });
+    $("tabsMore").addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        $("tabsMore").open = false;
+        $("tabsMore").querySelector("summary").focus();
+      }
     });
 
     $("runBtn").addEventListener("click", () => {
@@ -5590,7 +5618,6 @@
     });
     $("undoReg").addEventListener("click", undoRegulationEdit);
     $("redoReg").addEventListener("click", redoRegulationEdit);
-    $("validateReg").addEventListener("click", validateRegEditor);
     $("toggleRegulation").addEventListener("click", () => setRegulationEnabled(!regulationEnabled));
     $("toggleRegulationSynoptic").addEventListener("click", () => setRegulationEnabled(!regulationEnabled));
     $("copyRegNode").addEventListener("click", copySelectedRegNode);
