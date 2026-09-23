@@ -572,6 +572,9 @@
     .feature-title { margin: 4px 0 16px; }
     .feature-title h1 { margin: 0 0 5px; font-size: 27px; }
     .feature-title p { margin: 0; color: var(--muted); }
+    #view-regulation .feature-shell { max-width: none; width: 100%; }
+    #view-regulation .feature-title { margin: 2px 0 9px; }
+    #view-regulation .feature-title h1 { margin: 0; font-size: 23px; }
     .load-layout { display: grid; grid-template-columns: 430px minmax(620px, 1fr); gap: 16px; }
     .scenario-list { display: grid; gap: 10px; padding: 14px; }
     .scenario-choice {
@@ -597,7 +600,7 @@
     .program-chart { height: 360px; }
     .program-note { margin: 10px 0 0; color: #64717a; font-size: 12px; line-height: 1.45; }
 
-    .reg-layout { display: grid; grid-template-columns: 250px minmax(720px, 1fr); gap: 16px; }
+    .reg-layout { display: grid; grid-template-columns: clamp(210px, 16vw, 250px) minmax(0, 1fr); gap: 12px; }
     .reg-palette { max-height: 820px; padding: 13px; overflow: auto; }
     .reg-palette h2 { margin: 0 0 11px; font-size: 16px; }
     .palette-group { margin-top: 13px; }
@@ -615,9 +618,11 @@
     }
     .palette-item:hover { border-color: #9ba8b0; background: #eef3f5; }
     .reg-main { min-width: 0; }
-    .reg-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 10px 12px; border-bottom: 1px solid #e0e4e7; }
+    .reg-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 10px 12px; border-bottom: 1px solid #e0e4e7; scrollbar-width: thin; }
     .reg-toolbar > * { flex: 0 0 auto; }
-    .reg-toolbar .status { margin-left: auto; color: #5e6b74; font-size: 12px; }
+    .reg-status-row { display: flex; align-items: center; gap: 12px; min-height: 26px; padding: 3px 12px; border-bottom: 1px solid #e9edef; }
+    .reg-status-row .status { min-width: 0; overflow: hidden; margin-left: auto; color: #5e6b74; font-size: 11px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+    .reg-save-row { min-height: 18px; padding: 2px 12px 3px; border-bottom: 1px solid #e9edef; }
     .solutions-dialog {
       width: min(640px, calc(100vw - 32px));
       max-height: min(780px, calc(100vh - 32px));
@@ -649,7 +654,7 @@
     .solution-status.error { color: #b32828; }
     .solutions-footnote { margin: 0; padding: 12px 20px 16px; border-top: 1px solid #e6ebee; color: #6e7b83; font-size: 11px; line-height: 1.4; }
     @media (max-width: 520px) { .solution-code-row { align-items: stretch; flex-direction: column; } .solution-code-row input { width: 100%; } }
-    .reg-save-state { color: #65727b; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .reg-save-state { display: block; overflow: hidden; color: #65727b; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
     .reg-save-state.error { color: var(--danger); }
     .reg-mode-state { color: #69757e; font-size: 11px; font-weight: 800; }
     .reg-mode-state.active { color: #23724f; }
@@ -962,7 +967,7 @@
       .model-grid { grid-template-columns: 1fr; }
       .model-card.wide { grid-column: auto; }
       .load-layout { grid-template-columns: 360px minmax(580px, 1fr); }
-      .reg-layout { grid-template-columns: 220px minmax(720px, 1fr); }
+      .reg-layout { grid-template-columns: 210px minmax(0, 1fr); }
       .reg-footer { grid-template-columns: 1fr; }
     }
     @media (max-width: 700px) {
@@ -1351,7 +1356,6 @@
       <div class="feature-shell">
         <div class="feature-title">
           <h1 id="regViewTitle">CC-REGUL — éditeur de logique</h1>
-          <p id="regViewDescription">Construire librement sur un même canevas les régulations de température, de niveau pressuriseur puis de pression ; toute sortie reliée surcharge la commande manuelle correspondante.</p>
         </div>
         <div class="reg-layout">
           <aside class="card reg-palette">
@@ -1447,10 +1451,12 @@
               <button class="btn" id="zoomResetReg" type="button"><span id="regZoom">100 %</span></button>
               <button class="btn" id="zoomInReg" type="button" aria-label="Zoomer">+</button>
               <button class="btn" id="fitReg" type="button">Cadrer</button>
+            </div>
+            <div class="reg-status-row">
               <span class="reg-mode-state" id="regModeState">INACTIVE · commandes manuelles</span>
-              <span class="reg-save-state" id="regSaveStatus">Sauvegarde locale prête</span>
               <span class="status" id="regStatus" aria-live="polite">Maj+glisser : sélection · Maj+clic : ajouter/retirer · Ctrl+C/V/Z/Y · molette : zoom.</span>
             </div>
+            <div class="reg-save-row"><span class="reg-save-state" id="regSaveStatus" aria-live="polite">Sauvegarde locale prête</span></div>
             <div class="logic-canvas" id="logicCanvas">
               <div class="logic-selection-rect" id="logicSelectionRect" aria-hidden="true"></div>
               <div class="logic-world" id="logicWorld">
@@ -3551,11 +3557,11 @@
             throw new Error("Le fichier enregistré n’a pas pu être vérifié.");
           }
           writeRegAutosave();
-          $("regStatus").textContent = `Modèle enregistré sous : ${handle.name}`;
+          setRegSaveStatus(`Modèle enregistré sous : ${handle.name} · Sauvegarde locale à jour`);
           return;
         } catch (error) {
           if (error?.name === "AbortError") {
-            $("regStatus").textContent = "Enregistrement sous annulé.";
+            setRegSaveStatus("Enregistrement sous annulé.");
             return;
           }
         }
@@ -3569,7 +3575,7 @@
       link.remove();
       setTimeout(() => URL.revokeObjectURL(link.href), 0);
       writeRegAutosave();
-      $("regStatus").textContent = `Modèle téléchargé sous : ${link.download}`;
+      setRegSaveStatus(`Modèle téléchargé sous : ${link.download} · Sauvegarde locale à jour`);
     }
 
     async function importRegModelFile(file) {
@@ -3595,8 +3601,7 @@
         const model = normalizeRegModel(JSON.parse(saved));
         applyRegState(model, { name: model.name, autosave: false });
         const time = model.savedAt ? new Date(model.savedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "précédemment";
-        setRegSaveStatus(`Travail restauré · ${time}`);
-        $("regStatus").textContent = `Autosauvegarde restaurée : ${model.nodes.length} bloc${model.nodes.length > 1 ? "s" : ""} et ${model.links.length} liaison${model.links.length > 1 ? "s" : ""}.`;
+        setRegSaveStatus(`Travail restauré · ${time} · ${model.nodes.length} bloc${model.nodes.length > 1 ? "s" : ""}, ${model.links.length} liaison${model.links.length > 1 ? "s" : ""}`);
         return true;
       } catch (_) {
         setRegSaveStatus("Autosauvegarde illisible — canevas vide", true);
@@ -4041,6 +4046,17 @@
 
     function bindRegCanvasEvents() {
       const canvas = $("logicCanvas");
+      let previousSize = null;
+      new ResizeObserver(([entry]) => {
+        const { width, height } = entry.contentRect;
+        if (!width || !height) return;
+        if (previousSize && regViewInitialized) {
+          regViewport.x += (width - previousSize.width) / 2;
+          regViewport.y += (height - previousSize.height) / 2;
+          updateRegViewport();
+        }
+        previousSize = { width, height };
+      }).observe(canvas);
       canvas.addEventListener("wheel", event => {
         event.preventDefault();
         const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
